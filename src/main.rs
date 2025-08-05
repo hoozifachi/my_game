@@ -1,5 +1,6 @@
 use macroquad::prelude::*;
 
+#[derive(Debug)]
 struct Shape {
     size: f32,
     speed: f32,
@@ -9,15 +10,23 @@ struct Shape {
 
 impl Shape {
     fn collides_with(&self, other: &Self) -> bool {
-        self.rect().overlaps(&other.rect())
+        self.circle().overlaps_rect(&other.rect())
+    }
+
+    fn circle(&self) -> Circle {
+        Circle {
+            x: self.x,
+            y: self.y,
+            r: self.size / 2.0,
+        }
     }
 
     fn rect(&self) -> Rect {
         Rect {
-            x: self.x - self.size / 2.0,
-            y: self.y - self.size / 2.0,
-            w: self.size,
-            h: self.size,
+            x: self.x,
+            y: self.y,
+            w: self.size / 2.0,
+            h: self.size / 2.0,
         }
     }
 }
@@ -28,7 +37,12 @@ async fn main() {
 
     rand::srand(miniquad::date::now() as u64);
 
-    let mut squares = vec![];
+    let mut squares = vec![Shape {
+        x: screen_width() / 2.0,
+        y: 0.0,
+        size: 32.0,
+        speed: 150.0,
+    }];
     let mut circle = Shape {
         size: 32.0,
         speed: MOVEMENT_SPEED,
@@ -92,15 +106,15 @@ async fn main() {
             );
 
             // Generate a new square
-            if rand::gen_range(0, 99) >= 95 {
-                let size = rand::gen_range(16.0, 64.0);
-                squares.push(Shape {
-                    size,
-                    speed: rand::gen_range(50.0, 150.0),
-                    x: rand::gen_range(size / 2.0, screen_width() - size / 2.0),
-                    y: -size,
-                });
-            }
+            // if rand::gen_range(0, 99) >= 95 {
+            //     let size = rand::gen_range(16.0, 64.0);
+            //     squares.push(Shape {
+            //         size,
+            //         speed: rand::gen_range(50.0, 150.0),
+            //         x: rand::gen_range(size / 2.0, screen_width() - size / 2.0),
+            //         y: -size,
+            //     });
+            // }
 
             // Move squares
             for square in &mut squares {
@@ -111,6 +125,8 @@ async fn main() {
             squares.retain(|square| square.y < screen_height() + square.size);
         }
 
+        println!("Circle: {:?}", circle);
+        println!("Square: {:?}", squares[0]);
         if squares.iter().any(|square| circle.collides_with(square)) {
             game_over = true;
         }
