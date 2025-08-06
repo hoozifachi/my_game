@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use std::fs;
 
 #[derive(Debug)]
 struct Shape {
@@ -49,6 +50,10 @@ async fn main() {
     };
 
     let mut game_over = false;
+    let mut score: u32 = 0;
+    let mut high_score: u32 = fs::read_to_string("high_score.txt")
+        .map_or(Ok(0), |i| i.parse::<u32>())
+        .unwrap_or(0);
 
     loop {
         let delta_time = get_frame_time();
@@ -62,6 +67,7 @@ async fn main() {
             circle.x = screen_width() / 2.0;
             circle.y = screen_height() / 2.0;
             game_over = false;
+            score = 0;
         }
 
         // Display game over
@@ -146,6 +152,9 @@ async fn main() {
 
         // Check collisions
         if squares.iter().any(|square| circle.collides_with(square)) {
+            if score == high_score {
+                fs::write("highscore.dat", high_score.to_string()).ok();
+            }
             game_over = true;
         }
 
@@ -154,6 +163,8 @@ async fn main() {
                 if bullet.collides_with(&square) {
                     bullet.collided = true;
                     square.collided = true;
+                    score += square.size.round() as u32;
+                    high_score = high_score.max(score);
                 }
             }
         }
@@ -172,6 +183,16 @@ async fn main() {
         for bullet in &bullets {
             draw_circle(bullet.x, bullet.y, bullet.size / 2.0, RED);
         }
+        draw_text(format!("Score {score}").as_str(), 10.0, 35.0, 25.0, WHITE);
+        let highscore_text = format!("High Score {high_score}");
+        let text_dimensions = measure_text(highscore_text.as_str(), None, 25, 1.0);
+        draw_text(
+            highscore_text.as_str(),
+            screen_width() - text_dimensions.width - 10.0,
+            35.0,
+            25.0,
+            WHITE,
+        );
 
         next_frame().await
     }
