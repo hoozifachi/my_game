@@ -51,7 +51,7 @@ async fn main() {
 
     let mut game_over = false;
     let mut score: u32 = 0;
-    let mut high_score: u32 = fs::read_to_string("high_score.txt")
+    let mut high_score: u32 = fs::read_to_string("highscore.dat")
         .map_or(Ok(0), |i| i.parse::<u32>())
         .unwrap_or(0);
 
@@ -68,19 +68,6 @@ async fn main() {
             circle.y = screen_height() / 2.0;
             game_over = false;
             score = 0;
-        }
-
-        // Display game over
-        if game_over {
-            let text = "GAME OVER!";
-            let text_dimensions = measure_text(text, None, 50, 1.0);
-            draw_text(
-                text,
-                screen_width() / 2.0 - text_dimensions.width / 2.0,
-                screen_height() / 2.0,
-                50.0,
-                RED,
-            );
         }
 
         if !game_over {
@@ -193,6 +180,32 @@ async fn main() {
             25.0,
             WHITE,
         );
+
+        // Display game over
+        if game_over {
+            let text = "GAME OVER!";
+            let text_dimensions = measure_text(text, None, 50, 1.0);
+            draw_text(
+                text,
+                screen_width() / 2.0 - text_dimensions.width / 2.0,
+                screen_height() / 2.0,
+                50.0,
+                RED,
+            );
+
+            if score == high_score {
+                let congratulation_text = format!("NEW HIGH SCORE: {high_score}");
+                let congratulation_text_dimensions =
+                    measure_text(congratulation_text.as_str(), None, 50, 1.0);
+                draw_text(
+                    congratulation_text.as_str(),
+                    screen_width() / 2.0 - congratulation_text_dimensions.width / 2.0,
+                    screen_height() / 2.0 + 50.0,
+                    50.0,
+                    RED,
+                );
+            }
+        }
 
         next_frame().await
     }
