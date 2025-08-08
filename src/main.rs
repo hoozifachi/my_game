@@ -80,6 +80,27 @@ fn particle_explosion() -> particles::EmitterConfig {
     }
 }
 
+fn particle_exhaust() -> particles::EmitterConfig {
+    particles::EmitterConfig {
+        local_coords: false,
+        one_shot: false,
+        emitting: true,
+        initial_direction: vec2(0., 1.0),
+        lifetime: 0.2,
+        lifetime_randomness: 0.3,
+        initial_direction_spread: 0.5,
+        initial_velocity: 300.0,
+        initial_velocity_randomness: 0.8,
+        size: 1.0,
+        colors_curve: ColorCurve {
+            start: BLUE,
+            mid: GRAY,
+            end: BLUE,
+        },
+        ..Default::default()
+    }
+}
+
 #[macroquad::main("MyGame")]
 async fn main() {
     const MOVEMENT_SPEED: f32 = 200.0;
@@ -95,6 +116,13 @@ async fn main() {
         y: screen_height() / 2.0,
         collided: false,
     };
+    let mut exhaust = (
+        Emitter::new(EmitterConfig {
+            amount: circle.size.round() as u32 * 2,
+            ..particle_exhaust()
+        }),
+        vec2(circle.x, circle.y + circle.size / 2.0),
+    );
     let mut explosions: Vec<(Emitter, Vec2)> = vec![];
 
     let mut game_state = GameState::MainMenu;
@@ -169,17 +197,21 @@ async fn main() {
                 // Handle keyboard input
                 if is_key_down(KeyCode::Right) {
                     circle.x += circle.speed * delta_time;
+                    exhaust.1.x = circle.x;
                     direction_modifier += 0.05 * delta_time;
                 }
                 if is_key_down(KeyCode::Left) {
                     circle.x -= circle.speed * delta_time;
+                    exhaust.1.x = circle.x;
                     direction_modifier -= 0.05 * delta_time;
                 }
                 if is_key_down(KeyCode::Down) {
                     circle.y += circle.speed * delta_time;
+                    exhaust.1.y = circle.y + circle.size / 2.0;
                 }
                 if is_key_down(KeyCode::Up) {
                     circle.y -= circle.speed * delta_time;
+                    exhaust.1.y = circle.y + circle.size / 2.0;
                 }
 
                 // Shoot
@@ -266,6 +298,7 @@ async fn main() {
 
                 // Draw everything
                 draw_circle(circle.x, circle.y, circle.size / 2.0, YELLOW);
+                exhaust.0.draw(exhaust.1);
                 for square in &squares {
                     draw_rectangle(
                         square.x - square.size / 2.0,
