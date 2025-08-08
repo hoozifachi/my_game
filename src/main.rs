@@ -38,23 +38,15 @@ struct Shape {
 
 impl Shape {
     fn collides_with(&self, other: &Self) -> bool {
-        self.circle().overlaps_rect(&other.rect())
-    }
-
-    fn circle(&self) -> Circle {
-        Circle {
-            x: self.x,
-            y: self.y,
-            r: self.size / 2.0,
-        }
+        self.rect().overlaps(&other.rect())
     }
 
     fn rect(&self) -> Rect {
         Rect {
-            x: self.x,
-            y: self.y,
-            w: self.size / 2.0,
-            h: self.size / 2.0,
+            x: self.x - self.size / 2.0,
+            y: self.y - self.size / 2.0,
+            w: self.size,
+            h: self.size,
         }
     }
 }
