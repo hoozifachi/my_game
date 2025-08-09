@@ -3,23 +3,25 @@ use macroquad::prelude::*;
 use macroquad_particles::{self as particles, ColorCurve, Emitter, EmitterConfig};
 use std::fs;
 
-// const FRAGMENT_SHADER: &str = include_str!("starfield-shader.glsl");
+#[cfg(not(target_arch = "wasm32"))]
+const FRAGMENT_SHADER: &str = include_str!("starfield-shader.glsl");
 
-// const VERTEX_SHADER: &str = "#version 100
-// attribute vec3 position;
-// attribute vec2 texcoord;
-// attribute vec4 color0;
-// varying float iTime;
+#[cfg(not(target_arch = "wasm32"))]
+const VERTEX_SHADER: &str = "#version 100
+    attribute vec3 position;
+    attribute vec2 texcoord;
+    attribute vec4 color0;
+    varying float iTime;
 
-// uniform mat4 Model;
-// uniform mat4 Projection;
-// uniform vec4 _Time;
+    uniform mat4 Model;
+    uniform mat4 Projection;
+    uniform vec4 _Time;
 
-// void main() {
-//     gl_Position = Projection * Model * vec4(position, 1);
-//     iTime = _Time.x;
-// }
-// ";
+    void main() {
+        gl_Position = Projection * Model * vec4(position, 1);
+        iTime = _Time.x;
+    }
+    ";
 
 enum GameState {
     MainMenu,
@@ -184,41 +186,49 @@ async fn main() {
         .map_or(Ok(0), |i| i.parse::<u32>())
         .unwrap_or(0);
 
-    // let mut direction_modifier: f32 = 0.0;
-    // let render_target = render_target(320, 150);
-    // render_target.texture.set_filter(FilterMode::Nearest);
-    // let material = load_material(
-    //     ShaderSource::Glsl {
-    //         vertex: VERTEX_SHADER,
-    //         fragment: FRAGMENT_SHADER,
-    //     },
-    //     MaterialParams {
-    //         uniforms: vec![
-    //             UniformDesc::new("iResolution", UniformType::Float2),
-    //             UniformDesc::new("direction_modifier", UniformType::Float1),
-    //         ],
-    //         ..Default::default()
-    //     },
-    // )
-    // .unwrap();
+    let mut direction_modifier: f32 = 0.0;
+    #[cfg(not(target_arch = "wasm32"))]
+    let render_target = render_target(320, 150);
+    #[cfg(not(target_arch = "wasm32"))]
+    render_target.texture.set_filter(FilterMode::Nearest);
+    #[cfg(not(target_arch = "wasm32"))]
+    let material = load_material(
+        ShaderSource::Glsl {
+            vertex: VERTEX_SHADER,
+            fragment: FRAGMENT_SHADER,
+        },
+        MaterialParams {
+            uniforms: vec![
+                UniformDesc::new("iResolution", UniformType::Float2),
+                UniformDesc::new("direction_modifier", UniformType::Float1),
+            ],
+            ..Default::default()
+        },
+    )
+    .unwrap();
 
     loop {
         clear_background(BLACK);
 
-        // material.set_uniform("iResolution", (screen_width(), screen_height()));
-        // material.set_uniform("direction_modifier", direction_modifier);
-        // gl_use_material(&material);
-        // draw_texture_ex(
-        //     &render_target.texture,
-        //     0.,
-        //     0.,
-        //     WHITE,
-        //     DrawTextureParams {
-        //         dest_size: Some(vec2(screen_width(), screen_height())),
-        //         ..Default::default()
-        //     },
-        // );
-        // gl_use_default_material();
+        #[cfg(not(target_arch = "wasm32"))]
+        material.set_uniform("iResolution", (screen_width(), screen_height()));
+        #[cfg(not(target_arch = "wasm32"))]
+        material.set_uniform("direction_modifier", direction_modifier);
+        #[cfg(not(target_arch = "wasm32"))]
+        gl_use_material(&material);
+        #[cfg(not(target_arch = "wasm32"))]
+        draw_texture_ex(
+            &render_target.texture,
+            0.,
+            0.,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(screen_width(), screen_height())),
+                ..Default::default()
+            },
+        );
+        #[cfg(not(target_arch = "wasm32"))]
+        gl_use_default_material();
 
         match game_state {
             GameState::MainMenu => {
@@ -253,13 +263,13 @@ async fn main() {
                 if is_key_down(KeyCode::Right) {
                     circle.x += circle.speed * delta_time;
                     exhaust.1.x = circle.x;
-                    // direction_modifier += 0.05 * delta_time;
+                    direction_modifier += 0.05 * delta_time;
                     ship_sprite.set_animation(2);
                 }
                 if is_key_down(KeyCode::Left) {
                     circle.x -= circle.speed * delta_time;
                     exhaust.1.x = circle.x;
-                    // direction_modifier -= 0.05 * delta_time;
+                    direction_modifier -= 0.05 * delta_time;
                     ship_sprite.set_animation(1);
                 }
                 if is_key_down(KeyCode::Down) {
