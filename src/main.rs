@@ -51,47 +51,47 @@ impl Shape {
     }
 }
 
-// fn particle_explosion() -> particles::EmitterConfig {
-//     particles::EmitterConfig {
-//         local_coords: false,
-//         one_shot: true,
-//         emitting: true,
-//         lifetime: 0.6,
-//         lifetime_randomness: 0.3,
-//         explosiveness: 0.65,
-//         initial_direction_spread: 2.0 * std::f32::consts::PI,
-//         initial_velocity: 300.0,
-//         initial_velocity_randomness: 0.8,
-//         size: 3.0,
-//         colors_curve: ColorCurve {
-//             start: RED,
-//             mid: ORANGE,
-//             end: RED,
-//         },
-//         ..Default::default()
-//     }
-// }
+fn particle_explosion() -> particles::EmitterConfig {
+    particles::EmitterConfig {
+        local_coords: false,
+        one_shot: true,
+        emitting: true,
+        lifetime: 0.6,
+        lifetime_randomness: 0.3,
+        explosiveness: 0.65,
+        initial_direction_spread: 2.0 * std::f32::consts::PI,
+        initial_velocity: 300.0,
+        initial_velocity_randomness: 0.8,
+        size: 3.0,
+        colors_curve: ColorCurve {
+            start: RED,
+            mid: ORANGE,
+            end: RED,
+        },
+        ..Default::default()
+    }
+}
 
-// fn particle_exhaust() -> particles::EmitterConfig {
-//     particles::EmitterConfig {
-//         local_coords: false,
-//         one_shot: false,
-//         emitting: true,
-//         initial_direction: vec2(0., 1.0),
-//         lifetime: 0.2,
-//         lifetime_randomness: 0.3,
-//         initial_direction_spread: 0.5,
-//         initial_velocity: 300.0,
-//         initial_velocity_randomness: 0.8,
-//         size: 1.0,
-//         colors_curve: ColorCurve {
-//             start: BLUE,
-//             mid: GRAY,
-//             end: BLUE,
-//         },
-//         ..Default::default()
-//     }
-// }
+fn particle_exhaust() -> particles::EmitterConfig {
+    particles::EmitterConfig {
+        local_coords: false,
+        one_shot: false,
+        emitting: true,
+        initial_direction: vec2(0., 1.0),
+        lifetime: 0.2,
+        lifetime_randomness: 0.3,
+        initial_direction_spread: 0.5,
+        initial_velocity: 300.0,
+        initial_velocity_randomness: 0.8,
+        size: 1.0,
+        colors_curve: ColorCurve {
+            start: BLUE,
+            mid: GRAY,
+            end: BLUE,
+        },
+        ..Default::default()
+    }
+}
 
 #[macroquad::main("MyGame")]
 async fn main() {
@@ -108,14 +108,14 @@ async fn main() {
         y: screen_height() / 2.0,
         collided: false,
     };
-    // let mut exhaust = (
-    //     Emitter::new(EmitterConfig {
-    //         amount: circle.size.round() as u32 * 2,
-    //         ..particle_exhaust()
-    //     }),
-    //     vec2(circle.x, circle.y + circle.size / 2.0),
-    // );
-    // let mut explosions: Vec<(Emitter, Vec2)> = vec![];
+    let mut exhaust = (
+        Emitter::new(EmitterConfig {
+            amount: circle.size.round() as u32 * 2,
+            ..particle_exhaust()
+        }),
+        vec2(circle.x, circle.y + circle.size / 2.0),
+    );
+    let mut explosions: Vec<(Emitter, Vec2)> = vec![];
 
     let mut game_state = GameState::MainMenu;
     let mut score: u32 = 0;
@@ -168,7 +168,7 @@ async fn main() {
                 if is_key_pressed(KeyCode::Space) {
                     squares.clear();
                     bullets.clear();
-                    // explosions.clear();
+                    explosions.clear();
                     circle.x = screen_width() / 2.0;
                     circle.y = screen_height() / 2.0;
                     game_state = GameState::Playing;
@@ -189,21 +189,21 @@ async fn main() {
                 // Handle keyboard input
                 if is_key_down(KeyCode::Right) {
                     circle.x += circle.speed * delta_time;
-                    // exhaust.1.x = circle.x;
+                    exhaust.1.x = circle.x;
                     direction_modifier += 0.05 * delta_time;
                 }
                 if is_key_down(KeyCode::Left) {
                     circle.x -= circle.speed * delta_time;
-                    // exhaust.1.x = circle.x;
+                    exhaust.1.x = circle.x;
                     direction_modifier -= 0.05 * delta_time;
                 }
                 if is_key_down(KeyCode::Down) {
                     circle.y += circle.speed * delta_time;
-                    // exhaust.1.y = circle.y + circle.size / 2.0;
+                    exhaust.1.y = circle.y + circle.size / 2.0;
                 }
                 if is_key_down(KeyCode::Up) {
                     circle.y -= circle.speed * delta_time;
-                    // exhaust.1.y = circle.y + circle.size / 2.0;
+                    exhaust.1.y = circle.y + circle.size / 2.0;
                 }
 
                 // Shoot
@@ -260,7 +260,7 @@ async fn main() {
                 bullets.retain(|bullet| bullet.y > 0.0 - bullet.size / 2.0);
                 squares.retain(|square| !square.collided);
                 bullets.retain(|bullet| !bullet.collided);
-                // explosions.retain(|(explosion, _)| explosion.config.emitting);
+                explosions.retain(|(explosion, _)| explosion.config.emitting);
 
                 // Check collisions
                 if squares.iter().any(|square| circle.collides_with(square)) {
@@ -277,20 +277,20 @@ async fn main() {
                             square.collided = true;
                             score += square.size.round() as u32;
                             high_score = high_score.max(score);
-                            // explosions.push((
-                            //     Emitter::new(EmitterConfig {
-                            //         amount: square.size.round() as u32 * 2,
-                            //         ..particle_explosion()
-                            //     }),
-                            //     vec2(square.x, square.y),
-                            // ));
+                            explosions.push((
+                                Emitter::new(EmitterConfig {
+                                    amount: square.size.round() as u32 * 2,
+                                    ..particle_explosion()
+                                }),
+                                vec2(square.x, square.y),
+                            ));
                         }
                     }
                 }
 
                 // Draw everything
                 draw_circle(circle.x, circle.y, circle.size / 2.0, YELLOW);
-                // exhaust.0.draw(exhaust.1);
+                exhaust.0.draw(exhaust.1);
                 for square in &squares {
                     draw_rectangle(
                         square.x - square.size / 2.0,
@@ -304,9 +304,9 @@ async fn main() {
                     draw_circle(bullet.x, bullet.y, bullet.size / 2.0, RED);
                 }
 
-                // for (explosion, coords) in explosions.iter_mut() {
-                //     explosion.draw(*coords)
-                // }
+                for (explosion, coords) in explosions.iter_mut() {
+                    explosion.draw(*coords)
+                }
                 draw_text(format!("Score {score}").as_str(), 10.0, 35.0, 25.0, WHITE);
                 let highscore_text = format!("High Score {high_score}");
                 let text_dimensions = measure_text(highscore_text.as_str(), None, 25, 1.0);
