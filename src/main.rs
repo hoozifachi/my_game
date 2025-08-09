@@ -135,6 +135,10 @@ async fn main() {
         .await
         .expect("Couldn't load enemy-small.png");
     enemy_small_texture.set_filter(FilterMode::Nearest);
+    let enemy_big_texture: Texture2D = load_texture("enemy-big.png")
+        .await
+        .expect("Couldn't load enemy-big.png");
+    enemy_big_texture.set_filter(FilterMode::Nearest);
     build_textures_atlas();
 
     // Create animations
@@ -190,6 +194,18 @@ async fn main() {
         16,
         &[Animation {
             name: "enemy_small".to_string(),
+            row: 0,
+            frames: 2,
+            fps: 12,
+        }],
+        true,
+    );
+
+    let mut enemy_big_sprite = AnimatedSprite::new(
+        32,
+        32,
+        &[Animation {
+            name: "enemy_big".to_string(),
             row: 0,
             frames: 2,
             fps: 12,
@@ -351,6 +367,7 @@ async fn main() {
                 ship_sprite.update();
                 bullet_sprite.update();
                 enemy_small_sprite.update();
+                enemy_big_sprite.update();
 
                 // Remove squares and bullets when they go off screen or have collided
                 squares.retain(|square| square.y < screen_height() + square.size);
@@ -402,19 +419,37 @@ async fn main() {
                 );
                 exhaust.0.draw(exhaust.1);
 
-                let enemy_frame = enemy_small_sprite.frame();
                 for square in &squares {
-                    draw_texture_ex(
-                        &enemy_small_texture,
-                        square.x - square.size / 2.0,
-                        square.y - square.size / 2.0,
-                        WHITE,
-                        DrawTextureParams {
-                            dest_size: Some(vec2(square.size, square.size)),
-                            source: Some(enemy_frame.source_rect),
-                            ..Default::default()
-                        },
-                    );
+                    match square.size {
+                        size if size > 50.0 => {
+                            let enemy_frame = enemy_big_sprite.frame();
+                            draw_texture_ex(
+                                &enemy_big_texture,
+                                square.x - square.size / 2.0,
+                                square.y - square.size / 2.0,
+                                WHITE,
+                                DrawTextureParams {
+                                    dest_size: Some(vec2(square.size, square.size)),
+                                    source: Some(enemy_frame.source_rect),
+                                    ..Default::default()
+                                },
+                            );
+                        }
+                        _ => {
+                            let enemy_frame = enemy_small_sprite.frame();
+                            draw_texture_ex(
+                                &enemy_small_texture,
+                                square.x - square.size / 2.0,
+                                square.y - square.size / 2.0,
+                                WHITE,
+                                DrawTextureParams {
+                                    dest_size: Some(vec2(square.size, square.size)),
+                                    source: Some(enemy_frame.source_rect),
+                                    ..Default::default()
+                                },
+                            );
+                        }
+                    }
                 }
 
                 let bullet_frame = bullet_sprite.frame();
