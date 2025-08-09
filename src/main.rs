@@ -360,6 +360,7 @@ async fn main() {
                                 Emitter::new(EmitterConfig {
                                     amount: square.size.round() as u32 * 4,
                                     texture: Some(explosion_texture.clone()),
+                                    lifetime: square.size * 0.0133,
                                     ..particle_explosion()
                                 }),
                                 vec2(square.x, square.y),
