@@ -1,3 +1,4 @@
+use macroquad::experimental::animation::{AnimatedSprite, Animation};
 use macroquad::prelude::*;
 use macroquad_particles::{self as particles, ColorCurve, Emitter, EmitterConfig};
 use std::fs;
@@ -117,6 +118,66 @@ async fn main() {
     );
     let mut explosions: Vec<(Emitter, Vec2)> = vec![];
 
+    // Load textutes
+    set_pc_assets_folder("assets");
+
+    let ship_texture: Texture2D = load_texture("ship.png")
+        .await
+        .expect("Couldn't load ship.png");
+    ship_texture.set_filter(FilterMode::Nearest);
+    let bullet_texture = load_texture("laser-bolts.png")
+        .await
+        .expect("Couldn't load laser-bolt.png");
+    bullet_texture.set_filter(FilterMode::Nearest);
+    build_textures_atlas();
+
+    let mut bullet_sprite = AnimatedSprite::new(
+        16,
+        16,
+        &[
+            Animation {
+                name: "bullet".to_string(),
+                row: 0,
+                frames: 2,
+                fps: 12,
+            },
+            Animation {
+                name: "bolt".to_string(),
+                row: 1,
+                frames: 2,
+                fps: 12,
+            },
+        ],
+        true,
+    );
+    bullet_sprite.set_animation(1);
+
+    let mut ship_sprite = AnimatedSprite::new(
+        16,
+        24,
+        &[
+            Animation {
+                name: "idle".to_string(),
+                row: 0,
+                frames: 2,
+                fps: 12,
+            },
+            Animation {
+                name: "left".to_string(),
+                row: 2,
+                frames: 2,
+                fps: 12,
+            },
+            Animation {
+                name: "right".to_string(),
+                row: 4,
+                frames: 2,
+                fps: 12,
+            },
+        ],
+        true,
+    );
+
     let mut game_state = GameState::MainMenu;
     let mut score: u32 = 0;
     let mut high_score: u32 = fs::read_to_string("highscore.dat")
@@ -187,16 +248,19 @@ async fn main() {
             }
             GameState::Playing => {
                 let delta_time = get_frame_time();
+                ship_sprite.set_animation(0);
                 // Handle keyboard input
                 if is_key_down(KeyCode::Right) {
                     circle.x += circle.speed * delta_time;
                     exhaust.1.x = circle.x;
                     // direction_modifier += 0.05 * delta_time;
+                    ship_sprite.set_animation(2);
                 }
                 if is_key_down(KeyCode::Left) {
                     circle.x -= circle.speed * delta_time;
                     exhaust.1.x = circle.x;
                     // direction_modifier -= 0.05 * delta_time;
+                    ship_sprite.set_animation(1);
                 }
                 if is_key_down(KeyCode::Down) {
                     circle.y += circle.speed * delta_time;
@@ -211,9 +275,9 @@ async fn main() {
                 if is_key_pressed(KeyCode::Space) {
                     bullets.push(Shape {
                         x: circle.x,
-                        y: circle.y,
+                        y: circle.y - 24.0,
                         speed: circle.speed * 2.0,
-                        size: 5.0,
+                        size: 32.0,
                         collided: false,
                     });
                 }
@@ -256,6 +320,10 @@ async fn main() {
                     bullet.y -= bullet.speed * delta_time;
                 }
 
+                // Update animation
+                ship_sprite.update();
+                bullet_sprite.update();
+
                 // Remove squares and bullets when they go off screen or have collided
                 squares.retain(|square| square.y < screen_height() + square.size);
                 bullets.retain(|bullet| bullet.y > 0.0 - bullet.size / 2.0);
@@ -290,7 +358,18 @@ async fn main() {
                 }
 
                 // Draw everything
-                draw_circle(circle.x, circle.y, circle.size / 2.0, YELLOW);
+                let ship_frame = ship_sprite.frame();
+                draw_texture_ex(
+                    &ship_texture,
+                    circle.x - ship_frame.dest_size.x,
+                    circle.y - ship_frame.dest_size.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(ship_frame.dest_size * 2.0),
+                        source: Some(ship_frame.source_rect),
+                        ..Default::default()
+                    },
+                );
                 exhaust.0.draw(exhaust.1);
                 for square in &squares {
                     draw_rectangle(
@@ -301,8 +380,20 @@ async fn main() {
                         GREEN,
                     );
                 }
+
+                let bullet_frame = bullet_sprite.frame();
                 for bullet in &bullets {
-                    draw_circle(bullet.x, bullet.y, bullet.size / 2.0, RED);
+                    draw_texture_ex(
+                        &bullet_texture,
+                        bullet.x - bullet.size / 2.0,
+                        bullet.y - bullet.size / 2.0,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(bullet.size, bullet.size)),
+                            source: Some(bullet_frame.source_rect),
+                            ..Default::default()
+                        },
+                    )
                 }
 
                 for (explosion, coords) in explosions.iter_mut() {
