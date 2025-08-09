@@ -131,8 +131,13 @@ async fn main() {
         .await
         .expect("Couldn't load explosion.png");
     explosion_texture.set_filter(FilterMode::Nearest);
+    let enemy_small_texture: Texture2D = load_texture("enemy-small.png")
+        .await
+        .expect("Couldn't load enemy-small.png");
+    enemy_small_texture.set_filter(FilterMode::Nearest);
     build_textures_atlas();
 
+    // Create animations
     let mut bullet_sprite = AnimatedSprite::new(
         16,
         16,
@@ -177,6 +182,18 @@ async fn main() {
                 fps: 12,
             },
         ],
+        true,
+    );
+
+    let mut enemy_small_sprite = AnimatedSprite::new(
+        17,
+        16,
+        &[Animation {
+            name: "enemy_small".to_string(),
+            row: 0,
+            frames: 2,
+            fps: 12,
+        }],
         true,
     );
 
@@ -333,6 +350,7 @@ async fn main() {
                 // Update animation
                 ship_sprite.update();
                 bullet_sprite.update();
+                enemy_small_sprite.update();
 
                 // Remove squares and bullets when they go off screen or have collided
                 squares.retain(|square| square.y < screen_height() + square.size);
@@ -383,13 +401,19 @@ async fn main() {
                     },
                 );
                 exhaust.0.draw(exhaust.1);
+
+                let enemy_frame = enemy_small_sprite.frame();
                 for square in &squares {
-                    draw_rectangle(
+                    draw_texture_ex(
+                        &enemy_small_texture,
                         square.x - square.size / 2.0,
                         square.y - square.size / 2.0,
-                        square.size,
-                        square.size,
-                        GREEN,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(square.size, square.size)),
+                            source: Some(enemy_frame.source_rect),
+                            ..Default::default()
+                        },
                     );
                 }
 
