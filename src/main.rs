@@ -1,3 +1,4 @@
+use macroquad::audio::{PlaySoundParams, load_sound, play_sound, play_sound_once};
 use macroquad::experimental::animation::{AnimatedSprite, Animation};
 use macroquad::prelude::*;
 use macroquad_particles::{self as particles, AtlasConfig, ColorCurve, Emitter, EmitterConfig};
@@ -141,6 +142,11 @@ async fn main() {
     enemy_big_texture.set_filter(FilterMode::Nearest);
     build_textures_atlas();
 
+    // load sounds
+    let theme_music = load_sound("8bit-spaceshooter.ogg").await.unwrap();
+    let sound_explosion = load_sound("explosion.wav").await.unwrap();
+    let sound_laser = load_sound("laser.wav").await.unwrap();
+
     // Create animations
     let mut bullet_sprite = AnimatedSprite::new(
         16,
@@ -240,6 +246,14 @@ async fn main() {
     )
     .unwrap();
 
+    play_sound(
+        &theme_music,
+        PlaySoundParams {
+            looped: true,
+            volume: 1.0,
+        },
+    );
+
     loop {
         clear_background(BLACK);
 
@@ -323,6 +337,7 @@ async fn main() {
                         size: 32.0,
                         collided: false,
                     });
+                    play_sound_once(&sound_laser);
                 }
 
                 if is_key_pressed(KeyCode::Escape) {
@@ -400,6 +415,7 @@ async fn main() {
                                 }),
                                 vec2(square.x, square.y),
                             ));
+                            play_sound_once(&sound_explosion);
                         }
                     }
                 }
