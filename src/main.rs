@@ -1,4 +1,6 @@
-use macroquad::audio::{PlaySoundParams, load_sound, play_sound, play_sound_once};
+use macroquad::audio::{
+    PlaySoundParams, load_sound, play_sound, play_sound_once, set_sound_volume,
+};
 use macroquad::experimental::animation::{AnimatedSprite, Animation};
 use macroquad::prelude::*;
 use macroquad_particles::{self as particles, AtlasConfig, ColorCurve, Emitter, EmitterConfig};
@@ -250,7 +252,7 @@ async fn main() {
         &theme_music,
         PlaySoundParams {
             looped: true,
-            volume: 1.0,
+            volume: 0.5,
         },
     );
 
@@ -282,6 +284,8 @@ async fn main() {
                 if is_key_pressed(KeyCode::Escape) {
                     std::process::exit(0);
                 }
+                set_sound_volume(&theme_music, 0.5);
+
                 // Reset game if space is pressed
                 if is_key_pressed(KeyCode::Space) {
                     squares.clear();
@@ -304,6 +308,7 @@ async fn main() {
                 );
             }
             GameState::Playing => {
+                set_sound_volume(&theme_music, 1.0);
                 let delta_time = get_frame_time();
                 ship_sprite.set_animation(0);
                 // Handle keyboard input
@@ -501,6 +506,7 @@ async fn main() {
                 if is_key_pressed(KeyCode::Space) {
                     game_state = GameState::Playing;
                 }
+                set_sound_volume(&theme_music, 0.5);
                 let text = "Paused";
                 let text_dimensions = measure_text(text, None, 50, 1.0);
                 draw_text(
