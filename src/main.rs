@@ -2,8 +2,8 @@ use macroquad::audio::{
     PlaySoundParams, load_sound, play_sound, play_sound_once, set_sound_volume,
 };
 use macroquad::experimental::animation::{AnimatedSprite, Animation};
+use macroquad::prelude::*;
 use macroquad::ui::{Skin, hash, root_ui};
-use macroquad::{prelude::*, ui};
 use macroquad_particles::{self as particles, AtlasConfig, ColorCurve, Emitter, EmitterConfig};
 use std::fs;
 
