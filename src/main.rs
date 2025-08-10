@@ -2,7 +2,8 @@ use macroquad::audio::{
     PlaySoundParams, load_sound, play_sound, play_sound_once, set_sound_volume,
 };
 use macroquad::experimental::animation::{AnimatedSprite, Animation};
-use macroquad::prelude::*;
+use macroquad::ui::{Skin, hash, root_ui};
+use macroquad::{prelude::*, ui};
 use macroquad_particles::{self as particles, AtlasConfig, ColorCurve, Emitter, EmitterConfig};
 use std::fs;
 
@@ -149,6 +150,48 @@ async fn main() {
     let sound_explosion = load_sound("explosion.wav").await.unwrap();
     let sound_laser = load_sound("laser.wav").await.unwrap();
 
+    // Load UI elements
+    let window_background = load_image("window_background.png").await.unwrap();
+    let button_background = load_image("button_background.png").await.unwrap();
+    let button_clicked_background = load_image("button_clicked_background.png").await.unwrap();
+    let font = load_file("atari_games.ttf").await.unwrap();
+
+    let window_style = root_ui()
+        .style_builder()
+        .background(window_background)
+        .background_margin(RectOffset::new(32.0, 76.0, 44.0, 20.0))
+        .margin(RectOffset::new(0.0, -40.0, 0.0, 0.0))
+        .build();
+
+    let button_style = root_ui()
+        .style_builder()
+        .background(button_background)
+        .background_clicked(button_clicked_background)
+        .background_margin(RectOffset::new(16.0, 16.0, 16.0, 16.0))
+        .margin(RectOffset::new(16.0, 0.0, -8.0, -8.0))
+        .font(&font)
+        .unwrap()
+        .text_color(WHITE)
+        .font_size(64)
+        .build();
+
+    let label_style = root_ui()
+        .style_builder()
+        .font(&font)
+        .unwrap()
+        .text_color(WHITE)
+        .font_size(28)
+        .build();
+
+    let ui_skin = Skin {
+        window_style,
+        button_style,
+        label_style,
+        ..root_ui().default_skin()
+    };
+    root_ui().push_skin(&ui_skin);
+    let window_size = vec2(370.0, 320.0);
+
     // Create animations
     let mut bullet_sprite = AnimatedSprite::new(
         16,
@@ -285,28 +328,32 @@ async fn main() {
                     std::process::exit(0);
                 }
                 set_sound_volume(&theme_music, 0.5);
-
-                // Reset game if space is pressed
-                if is_key_pressed(KeyCode::Space) {
-                    squares.clear();
-                    bullets.clear();
-                    explosions.clear();
-                    circle.x = screen_width() / 2.0;
-                    circle.y = screen_height() / 2.0;
-                    exhaust.1 = vec2(circle.x, circle.y + circle.size / 2.0);
-                    game_state = GameState::Playing;
-                    score = 0;
-                }
-                let text = "Press Space";
-                let text_dimension = measure_text(text, None, 50, 1.0);
-                draw_text(
-                    text,
-                    screen_width() / 2.0 - text_dimension.width / 2.0,
-                    screen_height() / 2.0,
-                    50.0,
-                    WHITE,
+                root_ui().window(
+                    hash!(),
+                    vec2(
+                        screen_width() / 2.0 - window_size.x / 2.0,
+                        screen_height() / 2.0 - window_size.y / 2.0,
+                    ),
+                    window_size,
+                    |ui| {
+                        ui.label(vec2(80.0, -34.0), "Main Menu");
+                        if ui.button(vec2(65.0, 25.0), "Play") {
+                            squares.clear();
+                            bullets.clear();
+                            explosions.clear();
+                            circle.x = screen_width() / 2.0;
+                            circle.y = screen_height() / 2.0;
+                            exhaust.1 = vec2(circle.x, circle.y + circle.size / 2.0);
+                            game_state = GameState::Playing;
+                            score = 0;
+                        }
+                        if ui.button(vec2(65.0, 125.0), "Quit") {
+                            std::process::exit(0);
+                        }
+                    },
                 );
             }
+
             GameState::Playing => {
                 set_sound_volume(&theme_music, 1.0);
                 let delta_time = get_frame_time();
